@@ -1,18 +1,16 @@
 @echo off
 cd /d "%~dp0"
 
-rem Premiere fois : creation du venv + installation de PyQt6
-if not exist venv\Scripts\python.exe (
-  py -m venv venv
+rem Cree le venv s'il n'existe pas
+if not exist venv\Scripts\python.exe py -m venv venv
+
+rem Installe PyQt6 s'il manque (premiere fois, ou venv incomplet)
+venv\Scripts\python.exe -c "import PyQt6" 2>nul
+if errorlevel 1 (
+  echo Installation de PyQt6, un instant...
   venv\Scripts\python.exe -m pip install -r requirements.txt
 )
 
-rem Serveur et carrefours dans leurs propres fenetres, puis la carte
-start "Serveur OzdAka" venv\Scripts\python.exe serveur.py
-timeout /t 1 >nul
-start "Carrefours OzdAka" venv\Scripts\python.exe carrefours.py
+rem La carte demarre toute seule le serveur et les carrefours
 venv\Scripts\python.exe carte.py
-
-echo.
-echo Ferme aussi les fenetres "Serveur" et "Carrefours" (Ctrl+C).
-pause
+if errorlevel 1 pause

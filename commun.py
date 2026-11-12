@@ -6,13 +6,38 @@ import math
 HOST, PORT = "127.0.0.1", 5000
 CYCLE = 14.0                                   # durée d'un cycle de feu (s)
 
-# Carte 3x3 : C1 C2 C3 / C4 C5 C6 / C7 C8 C9
-NOEUDS = {f"C{3 * l + c + 1}": (100 + 200 * c, 100 + 200 * l)
-          for l in range(3) for c in range(3)}
-ROUTES = ([(f"C{i}", f"C{i + 1}") for i in (1, 2, 4, 5, 7, 8)]
-          + [(f"C{i}", f"C{i + 3}") for i in range(1, 7)])
-# un feu par carrefour ayant au moins 3 routes
-FEUX = [n for n in NOEUDS if sum(n in r for r in ROUTES) >= 3]
+# La carte courante. Ces 3 objets sont modifiés « en place » (jamais remplacés) :
+# tous les modules qui les importent voient donc la carte à jour.
+NOEUDS = {}      # {"C1": (x, y)}
+ROUTES = []      # [("C1", "C2")]
+FEUX = []        # carrefours ayant au moins 3 routes : ils ont un feu
+
+
+def maj_feux():
+    FEUX[:] = [n for n in NOEUDS if sum(n in r for r in ROUTES) >= 3]
+
+
+def definir_carte(noeuds, routes):
+    """Remplace la carte courante (les routes qui citent un carrefour inconnu sont ignorées)."""
+    noeuds = {n: tuple(p) for n, p in noeuds.items()}
+    routes = [tuple(r) for r in routes if r[0] in noeuds and r[1] in noeuds]
+    NOEUDS.clear()
+    NOEUDS.update(noeuds)
+    ROUTES[:] = routes
+    maj_feux()
+
+
+def grille(n=3):
+    """Grille n x n sur 600x600 : C1 C2 C3 / C4 C5 C6 / ... Retourne (noeuds, routes)."""
+    pas = 600 / n
+    noeuds = {f"C{n * l + c + 1}": (round(pas / 2 + pas * c), round(pas / 2 + pas * l))
+              for l in range(n) for c in range(n)}
+    routes = ([(f"C{n * l + c + 1}", f"C{n * l + c + 2}") for l in range(n) for c in range(n - 1)]
+              + [(f"C{n * l + c + 1}", f"C{n * (l + 1) + c + 1}") for l in range(n - 1) for c in range(n)])
+    return noeuds, routes
+
+
+definir_carte(*grille(3))
 
 
 def longueur(a, b):
